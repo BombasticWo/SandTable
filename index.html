@@ -1,85 +1,94 @@
-<!DOCTYPE html>
+https://github.com/BombasticWo/SandTable<!DOCTYPE html>
 <html>
 <head>
-    <title>Draw to G-Code Generator</title>
+    <title>Sand Table G-Code Creator</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        canvas { border: 2px solid #333; background: #fff; cursor: crosshair; touch-action: none; }
-        .controls { margin-top: 15px; gap: 10px; display: flex; }
-        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
-        button:hover { background: #0056b3; }
-        #clearBtn { background: #dc3545; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f4f1ea; }
+        h2 { color: #5d4037; }
+        /* The canvas is exactly 180x180 to match your table mm */
+        canvas { border: 5px solid #d7ccc8; background: #fff; cursor: crosshair; box-shadow: 0 4px 6px rgba(0,0,0,0.1); touch-action: none; }
+        .controls { margin-top: 20px; display: flex; gap: 10px; }
+        button { padding: 12px 24px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+        #downloadBtn { background: #4caf50; color: white; }
+        #clearBtn { background: #e53935; color: white; }
+        button:hover { opacity: 0.8; }
+        .info { margin-top: 10px; color: #795548; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
-    <h2>Hand-Drawn G-Code Generator</h2>
-    <p>Draw below and click "Download G-Code" to save your file.</p>
-
-    <canvas id="drawCanvas" width="500" height="500"></canvas>
+    <h2>Sand Table Designer (180x180mm)</h2>
+    <canvas id="sandCanvas" width="180" height="180"></canvas>
+    
+    <div class="info">1 Pixel = 1 Millimeter</div>
 
     <div class="controls">
-        <button id="clearBtn">Clear Canvas</button>
-        <button id="downloadBtn">Download G-Code (.nc)</button>
+        <button id="clearBtn">Clear Path</button>
+        <button id="downloadBtn">Download G-Code</button>
     </div>
 
     <script>
-        const canvas = document.getElementById('drawCanvas');
+        const canvas = document.getElementById('sandCanvas');
         const ctx = canvas.getContext('2d');
         const downloadBtn = document.getElementById('downloadBtn');
         const clearBtn = document.getElementById('clearBtn');
 
         let drawing = false;
-        let gcodeCommands = ["G21 ; Set units to mm", "G90 ; Absolute positioning", "M3 S1000 ; Pen Down/Laser On"];
+        // Start with basic setup: Millimeters and Absolute Positioning
+        let gcodeCommands = ["G21", "G90"];
 
-        // Drawing Logic
-        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousedown', start);
         canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseup', stop);
 
-        function startDrawing(e) {
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.round(e.clientX - rect.left);
+            const rawY = Math.round(e.clientY - rect.top);
+            // Flip Y so 0 is at the bottom
+            const y = 180 - rawY; 
+            return { x, y };
+        }
+
+        function start(e) {
             drawing = true;
-            const x = e.offsetX;
-            const y = e.offsetY;
+            const { x, y } = getCoords(e);
             ctx.beginPath();
-            ctx.moveTo(x, y);
-            // Move to start position without drawing (Pen Up)
-            gcodeCommands.push(`G0 X${x} Y${y}`); 
+            ctx.moveTo(x, 180 - y); // Drawing on screen uses screen Y
+            gcodeCommands.push(`G0 X${x} Y${y} ; Move to start`);
         }
 
         function draw(e) {
             if (!drawing) return;
-            const x = e.offsetX;
-            const y = e.offsetY;
+            const { x, y } = getCoords(e);
             
-            ctx.lineTo(x, y);
+            // Draw visual line
+            ctx.lineTo(x, 180 - y);
+            ctx.strokeStyle = "#8d6e63";
+            ctx.lineWidth = 2;
             ctx.stroke();
             
-            // Add a linear draw command (Pen Down)
-            gcodeCommands.push(`G1 X${x} Y${y} F1000`);
+            // Record G-code (F500 sets the speed to 500mm/min)
+            gcodeCommands.push(`G1 X${x} Y${y} F500`);
         }
 
-        function stopDrawing() {
+        function stop() {
             drawing = false;
-            gcodeCommands.push("G0 Z5 ; Lift Pen"); // Optional: Add a lift command between strokes
         }
 
-        // Clear Canvas
         clearBtn.onclick = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            gcodeCommands = ["G21", "G90", "M3 S1000"];
+            gcodeCommands = ["G21", "G90"];
         };
 
-        // File Download Logic
         downloadBtn.onclick = () => {
-            gcodeCommands.push("M5 ; Tool Off", "G0 X0 Y0 ; Return Home");
+            gcodeCommands.push("G0 X0 Y0 ; Return to home");
             const blob = new Blob([gcodeCommands.join('\n')], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'drawing.nc'; // Common G-Code extension
+            a.download = 'sand_pattern.nc';
             a.click();
-            window.URL.revokeObjectURL(url);
         };
     </script>
 </body>
