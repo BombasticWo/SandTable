@@ -37,6 +37,7 @@
 
         #downloadBtn { background-color: #27ae60; color: white; }
         #clearBtn { background-color: #e74c3c; color: white; }
+        #drawModeBtn { background-color: #3498db; color: white; }
 
         #gcodePreview { 
             width: 250px; 
@@ -50,3 +51,48 @@
             padding: 10px;
         }
     </style>
+</head>
+<body>
+    <div class="controls">
+        <button id="downloadBtn">Download</button>
+        <button id="clearBtn">Clear</button>
+        <button id="drawModeBtn">Drawing Mode</button>
+    </div>
+    <canvas id="drawingCanvas" width="500" height="500"></canvas>
+    <textarea id="gcodePreview" readonly></textarea>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const drawModeBtn = document.getElementById('drawModeBtn');
+
+        let isDrawing = false;
+
+        // Drawing mode functionality
+        drawModeBtn.addEventListener('click', () => {
+            canvas.style.cursor = 'crosshair';
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+        });
+
+        function startDrawing(event) {
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(event.offsetX, event.offsetY);
+        }
+
+        function draw(event) {
+            if (!isDrawing) return;
+            ctx.lineTo(event.offsetX, event.offsetY);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            ctx.closePath();
+        }
+    </script>
+</body>
+</html>
