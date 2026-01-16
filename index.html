@@ -3,96 +3,40 @@
 <head>
     <title>Sand Table G-Code Gen</title>
     <style>
-        /* This section controls the background color */
-        body { 
-            font-family: sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 20px; 
-            background-color: red; /* Changed from deep blue to red */
-            color: white; /* Makes text readable on red */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
         }
 
-        canvas { 
-            border: 4px solid #ffffff; 
-            background: #ffffff; 
-            cursor: crosshair; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-
-        .controls { 
-            margin: 20px; 
-            display: flex; 
-            gap: 10px; 
+        .button-container {
+            display: flex;
+            gap: 10px;
         }
 
         button {
             padding: 10px 20px;
-            font-weight: bold;
+            font-size: 16px;
             cursor: pointer;
-            border-radius: 5px;
             border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
         }
 
-        #downloadBtn { background-color: #27ae60; color: white; }
-        #clearBtn { background-color: #e74c3c; color: white; }
-        #drawModeBtn { background-color: #3498db; color: white; }
-
-        #gcodePreview { 
-            width: 250px; 
-            height: 150px; 
-            margin-top: 10px; 
-            font-family: monospace; 
-            font-size: 11px;
-            background: #1a252f;
-            color: #1abc9c;
-            border: 1px solid #34495e;
-            padding: 10px;
+        button:hover {
+            background-color: #2980b9;
         }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <button id="downloadBtn">Download</button>
-        <button id="clearBtn">Clear</button>
-        <button id="drawModeBtn">Drawing Mode</button>
+    <div class="button-container">
+        <button>Button 1</button>
+        <button>Button 2</button>
+        <button>Button 3</button>
     </div>
-    <canvas id="drawingCanvas" width="500" height="500"></canvas>
-    <textarea id="gcodePreview" readonly></textarea>
-
-    <script>
-        const canvas = document.getElementById('drawingCanvas');
-        const ctx = canvas.getContext('2d');
-        const drawModeBtn = document.getElementById('drawModeBtn');
-
-        let isDrawing = false;
-
-        // Drawing mode functionality
-        drawModeBtn.addEventListener('click', () => {
-            canvas.style.cursor = 'crosshair';
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseleave', stopDrawing);
-        });
-
-        function startDrawing(event) {
-            isDrawing = true;
-            ctx.beginPath();
-            ctx.moveTo(event.offsetX, event.offsetY);
-        }
-
-        function draw(event) {
-            if (!isDrawing) return;
-            ctx.lineTo(event.offsetX, event.offsetY);
-            ctx.stroke();
-        }
-
-        function stopDrawing() {
-            isDrawing = false;
-            ctx.closePath();
-        }
-    </script>
 </body>
 </html>
