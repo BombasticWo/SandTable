@@ -28,6 +28,8 @@
             padding: 20px;
             background-color: #e8f4f8;
             margin-bottom: 20px;
+            width: 500px;
+            box-sizing: border-box;
         }
 
         .upload-controls label {
@@ -45,6 +47,8 @@
         }
 
         input[type="range"] {
+            width: 300px;
+            height: 8px;
             margin-bottom: 10px;
         }
 
@@ -153,7 +157,7 @@
         <input type="file" id="imageInput" accept="image/*">
         
         <div>
-            <label>Threshold (darker = more detail): 
+            <label>Threshold (lower = more detail): 
                 <input type="range" id="thresholdSlider" min="0" max="255" value="128">
                 <span class="threshold-value" id="thresholdValue">128</span>
             </label>
@@ -183,6 +187,8 @@
     </div>
 
     <div class="controls">
+        <input type="text" id="filenameInput" placeholder="filename" value="image">
+        <span>.gcode</span>
         <button id="downloadBtn">Download G-Code</button>
     </div>
 
@@ -225,15 +231,16 @@
                 const img = new Image();
                 img.onload = () => {
                     currentImage = img;
-                    // Draw image to canvas
-                    ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
                     
-                    // Calculate scaling to fit in 500x500
-                    const scale = Math.min(500 / img.width, 500 / img.height);
-                    const x = (500 - img.width * scale) / 2;
-                    const y = (500 - img.height * scale) / 2;
+                    // Store the actual image dimensions
+                    const actualWidth = img.width;
+                    const actualHeight = img.height;
                     
-                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                    // Create a canvas with actual image dimensions (not padded)
+                    previewCanvas.width = actualWidth;
+                    previewCanvas.height = actualHeight;
+                    
+                    ctx.drawImage(img, 0, 0);
                     previewCanvas.classList.add('active');
                     currentImageData = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
                     
@@ -268,9 +275,10 @@
                 return;
             }
 
+            const filename = document.getElementById('filenameInput').value.trim() || 'image';
             const element = document.createElement('a');
             element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(generatedGCode));
-            element.setAttribute('download', 'image.gcode');
+            element.setAttribute('download', filename + '.gcode');
             element.style.display = 'none';
             document.body.appendChild(element);
             element.click();

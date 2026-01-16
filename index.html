@@ -5,11 +5,19 @@
     <style>
         body {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
+        }
+
+        h1 {
+            font-size: 60px;
+            text-align: center;
+            margin: 30px 0;
+            color: #333;
         }
 
         .button-container {
@@ -55,18 +63,20 @@
     </style>
 </head>
 <body>
+    <h1>Sand Table</h1>
+
     <div class="button-container">
         <button onclick="window.location.href='draw.html'">
             <div class="button-icon">✏️</div>
-            <div class="button-text">Draw & Convert</div>
+            <div class="button-text">Draw</div>
         </button>
         <button onclick="window.location.href='patterns.html'">
-            <div class="button-icon">🔷</div>
+            <div class="button-icon">🌀</div>
             <div class="button-text">Patterns</div>
         </button>
         <button onclick="window.location.href='upload.html'">
             <div class="button-icon">🖼️</div>
-            <div class="button-text">Upload Image</div>
+            <div class="button-text">Image</div>
         </button>
     </div>
 </body>

@@ -139,10 +139,12 @@
 </head>
 <body>
     <h1>Draw & Convert to G-Code</h1>
-    <p style="color: #666; margin: 0 0 20px 0;">Sand Table: 180mm × 180mm</p>
+    <p style="color: #667; margin: 0 0 20px 0;">Sand Table: 180mm × 180mm</p>
     
     <div class="controls">
         <button id="downloadBtn">Download G-Code</button>
+        <input type="text" id="filenameInput" placeholder="filename" value="drawing">
+        <span>.gcode</span>
         <button id="clearBtn">Clear Canvas</button>
         <button id="backBtn">Back to Menu</button>
     </div>
@@ -529,9 +531,10 @@
             }
 
             const gcode = convertToGCode();
+            const filename = document.getElementById('filenameInput').value.trim() || 'drawing';
             const element = document.createElement('a');
             element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(gcode));
-            element.setAttribute('download', 'drawing.gcode');
+            element.setAttribute('download', filename + '.gcode');
             element.style.display = 'none';
             document.body.appendChild(element);
             element.click();
