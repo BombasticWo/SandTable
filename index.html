@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Draw to G-Code Generator</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        canvas { border: 2px solid #333; background: #fff; cursor: crosshair; touch-action: none; }
+        .controls { margin-top: 15px; gap: 10px; display: flex; }
+        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button:hover { background: #0056b3; }
+        #clearBtn { background: #dc3545; }
+    </style>
+</head>
+<body>
+
+    <h2>Hand-Drawn G-Code Generator</h2>
+    <p>Draw below and click "Download G-Code" to save your file.</p>
+
+    <canvas id="drawCanvas" width="500" height="500"></canvas>
+
+    <div class="controls">
+        <button id="clearBtn">Clear Canvas</button>
+        <button id="downloadBtn">Download G-Code (.nc)</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        let drawing = false;
+        let gcodeCommands = ["G21 ; Set units to mm", "G90 ; Absolute positioning", "M3 S1000 ; Pen Down/Laser On"];
+
+        // Drawing Logic
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+
+        function startDrawing(e) {
+            drawing = true;
+            const x = e.offsetX;
+            const y = e.offsetY;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            // Move to start position without drawing (Pen Up)
+            gcodeCommands.push(`G0 X${x} Y${y}`); 
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            const x = e.offsetX;
+            const y = e.offsetY;
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            // Add a linear draw command (Pen Down)
+            gcodeCommands.push(`G1 X${x} Y${y} F1000`);
+        }
+
+        function stopDrawing() {
+            drawing = false;
+            gcodeCommands.push("G0 Z5 ; Lift Pen"); // Optional: Add a lift command between strokes
+        }
+
+        // Clear Canvas
+        clearBtn.onclick = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            gcodeCommands = ["G21", "G90", "M3 S1000"];
+        };
+
+        // File Download Logic
+        downloadBtn.onclick = () => {
+            gcodeCommands.push("M5 ; Tool Off", "G0 X0 Y0 ; Return Home");
+            const blob = new Blob([gcodeCommands.join('\n')], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'drawing.nc'; // Common G-Code extension
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+    </script>
+</body>
+</html>
