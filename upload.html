@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Image to G-Code</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .upload-controls {
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            padding: 20px;
+            background-color: #e8f4f8;
+            margin-bottom: 20px;
+        }
+
+        .upload-controls label {
+            font-weight: bold;
+            color: #3498db;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+        }
+
+        input[type="range"] {
+            margin-bottom: 10px;
+        }
+
+        .threshold-value {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        canvas {
+            border: 2px solid #333;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        canvas.active {
+            display: block;
+        }
+
+        .preview-row {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .preview-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #downloadBtn {
+            background-color: #27ae60;
+        }
+
+        #downloadBtn:hover {
+            background-color: #229954;
+        }
+
+        #backBtn {
+            background-color: #95a5a6;
+        }
+
+        #backBtn:hover {
+            background-color: #7f8c8d;
+        }
+
+        #gcodePreview {
+            width: 400px;
+            height: 200px;
+            font-family: monospace;
+            font-size: 12px;
+            background: #1a252f;
+            color: #1abc9c;
+            border: 1px solid #34495e;
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+            display: none;
+        }
+
+        #gcodePreview.active {
+            display: block;
+        }
+
+        .info {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Image to G-Code</h1>
+    <p style="color: #666; margin: 0 0 20px 0;">Sand Table: 180mm × 180mm</p>
+
+    <div class="controls">
+        <button id="backBtn">Back to Menu</button>
+    </div>
+
+    <div class="upload-controls">
+        <label for="imageInput">Upload an image:</label>
+        <input type="file" id="imageInput" accept="image/*">
+        
+        <div>
+            <label>Threshold (darker = more detail): 
+                <input type="range" id="thresholdSlider" min="0" max="255" value="128">
+                <span class="threshold-value" id="thresholdValue">128</span>
+            </label>
+        </div>
+
+        <div>
+            <label>
+                <input type="checkbox" id="invertCheckbox">
+                Invert (draw bright areas instead of dark)
+            </label>
+        </div>
+
+        <button id="convertBtn">Convert to G-Code</button>
+    </div>
+
+    <canvas id="previewCanvas"></canvas>
+
+    <div class="preview-row">
+        <div class="preview-column">
+            <div class="preview-label">Image Preview</div>
+            <canvas id="imagePreviewCanvas" width="250" height="250" style="border: 1px solid #ddd; display: none;"></canvas>
+        </div>
+        <div class="preview-column">
+            <div class="preview-label">G-Code Path Preview</div>
+            <canvas id="gcodePathCanvas" width="250" height="250" style="border: 1px solid #ddd; display: none;"></canvas>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="downloadBtn">Download G-Code</button>
+    </div>
+
+    <h3>G-Code Preview:</h3>
+    <textarea id="gcodePreview" readonly></textarea>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const thresholdSlider = document.getElementById('thresholdSlider');
+        const thresholdValue = document.getElementById('thresholdValue');
+        const invertCheckbox = document.getElementById('invertCheckbox');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const backBtn = document.getElementById('backBtn');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const ctx = previewCanvas.getContext('2d');
+        const imagePreviewCanvas = document.getElementById('imagePreviewCanvas');
+        const imagePreviewCtx = imagePreviewCanvas.getContext('2d');
+        const gcodePathCanvas = document.getElementById('gcodePathCanvas');
+        const gcodePathCtx = gcodePathCanvas.getContext('2d');
+        const gcodePreview = document.getElementById('gcodePreview');
+
+        let currentImageData = null;
+        let generatedGCode = '';
+        let currentImage = null;
+
+        previewCanvas.width = 500;
+        previewCanvas.height = 500;
+
+        thresholdSlider.addEventListener('input', (e) => {
+            thresholdValue.textContent = e.target.value;
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
+                    // Draw image to canvas
+                    ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                    
+                    // Calculate scaling to fit in 500x500
+                    const scale = Math.min(500 / img.width, 500 / img.height);
+                    const x = (500 - img.width * scale) / 2;
+                    const y = (500 - img.height * scale) / 2;
+                    
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                    previewCanvas.classList.add('active');
+                    currentImageData = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+                    
+                    // Draw image to small preview canvas
+                    imagePreviewCtx.drawImage(img, 0, 0, imagePreviewCanvas.width, imagePreviewCanvas.height);
+                    imagePreviewCanvas.style.display = 'block';
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        convertBtn.addEventListener('click', () => {
+            if (!currentImageData) {
+                alert('Please upload an image first!');
+                return;
+            }
+
+            const threshold = parseInt(thresholdSlider.value);
+            const invert = invertCheckbox.checked;
+            generatedGCode = imageToGCode(currentImageData, threshold, invert);
+            gcodePreview.value = generatedGCode;
+            gcodePreview.classList.add('active');
+            
+            // Draw G-code path preview
+            drawGCodePreview(generatedGCode);
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (!generatedGCode) {
+                alert('Please convert an image first!');
+                return;
+            }
+
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(generatedGCode));
+            element.setAttribute('download', 'image.gcode');
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        });
+
+        backBtn.addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        function imageToGCode(imageData, threshold, invert = false) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+
+            let gcode = [];
+            gcode.push('G90'); // Absolute positioning
+            gcode.push('G21'); // Millimeters
+
+            // Scale factors to fit 180x180mm
+            const scaleX = 180 / width;
+            const scaleY = 180 / height;
+
+            // Create a binary image
+            const binaryImage = new Uint8Array(width * height);
+            for (let i = 0; i < width * height; i++) {
+                const brightness = (data[i * 4] + data[i * 4 + 1] + data[i * 4 + 2]) / 3;
+                let pixel;
+                if (invert) {
+                    pixel = brightness > threshold ? 1 : 0;
+                } else {
+                    pixel = brightness < threshold ? 1 : 0;
+                }
+                binaryImage[i] = pixel;
+            }
+
+            // Scan horizontally, only drawing on black pixels
+            const lineSpacing = 2;
+            
+            for (let y = 0; y < height; y += lineSpacing) {
+                let segments = [];
+                let inSegment = false;
+                let segmentStart = 0;
+                
+                // Find continuous black segments
+                for (let x = 0; x < width; x++) {
+                    const idx = y * width + x;
+                    const pixel = binaryImage[idx];
+                    
+                    if (pixel === 1 && !inSegment) {
+                        inSegment = true;
+                        segmentStart = x;
+                    } else if (pixel === 0 && inSegment) {
+                        inSegment = false;
+                        segments.push({ start: segmentStart, end: x });
+                    }
+                }
+                
+                if (inSegment) {
+                    segments.push({ start: segmentStart, end: width });
+                }
+                
+                // Draw segments - G0 to start, G1 to draw through black
+                for (let seg of segments) {
+                    const x1 = seg.start * scaleX;
+                    const x2 = seg.end * scaleX;
+                    // Flip Y-axis: invert the image vertically
+                    const yMm = (height - y) * scaleY;
+                    
+                    // G0 = rapid move (no drawing)
+                    // G1 = drawing move
+                    gcode.push(`G0 X${x1.toFixed(2)} Y${yMm.toFixed(2)}`);
+                    gcode.push(`G1 X${x2.toFixed(2)} Y${yMm.toFixed(2)} F1000`);
+                }
+            }
+
+            gcode.push('G0 X0 Y0'); // Return to origin
+            gcode.push('M30'); // End of program
+
+            return gcode.join('\n');
+        }
+
+        function drawGCodePreview(gcode) {
+            gcodePathCtx.fillStyle = '#ffffff';
+            gcodePathCtx.fillRect(0, 0, gcodePathCanvas.width, gcodePathCanvas.height);
+
+            const lines = gcode.split('\n');
+            let currentX = 0;
+            let currentY = 0;
+            
+            // Scale from mm to canvas pixels (180mm table to 250px canvas)
+            const scale = gcodePathCanvas.width / 180;
+
+            gcodePathCtx.strokeStyle = '#000000';
+            gcodePathCtx.lineWidth = 1;
+            gcodePathCtx.lineCap = 'round';
+            gcodePathCtx.lineJoin = 'round';
+
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('G0')) {
+                    // Move (rapid)
+                    const match = line.match(/X([\d.-]+)\s+Y([\d.-]+)/);
+                    if (match) {
+                        currentX = parseFloat(match[1]);
+                        currentY = parseFloat(match[2]);
+                    }
+                } else if (line.startsWith('G1')) {
+                    // Line draw
+                    const match = line.match(/X([\d.-]+)\s+Y([\d.-]+)/);
+                    if (match) {
+                        const newX = parseFloat(match[1]);
+                        const newY = parseFloat(match[2]);
+                        
+                        const x1 = currentX * scale;
+                        const y1 = currentY * scale;
+                        const x2 = newX * scale;
+                        const y2 = newY * scale;
+                        
+                        gcodePathCtx.beginPath();
+                        gcodePathCtx.moveTo(x1, y1);
+                        gcodePathCtx.lineTo(x2, y2);
+                        gcodePathCtx.stroke();
+                        
+                        currentX = newX;
+                        currentY = newY;
+                    }
+                }
+            }
+
+            gcodePathCanvas.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

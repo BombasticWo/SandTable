@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sand Table Patterns</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        .pattern-card {
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .pattern-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-color: #2980b9;
+        }
+
+        .pattern-preview {
+            width: 100%;
+            height: 150px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .pattern-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .pattern-description {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .pattern-download {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .pattern-download:hover {
+            background-color: #229954;
+        }
+
+        #backBtn {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        #backBtn:hover {
+            background-color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn">← Back to Menu</button>
+    <h1>Sand Table Patterns</h1>
+    <p>Select a pattern to download as G-Code</p>
+
+    <div class="pattern-grid" id="patternGrid"></div>
+
+    <script>
+        const patterns = [
+            {
+                name: "Spiral",
+                description: "A smooth spiral pattern",
+                generate: function() {
+                    let points = [];
+                    const centerX = 90, centerY = 90;
+                    const maxRadius = 80;
+                    for (let angle = 0; angle < Math.PI * 6; angle += 0.05) {
+                        const radius = (angle / (Math.PI * 6)) * maxRadius;
+                        const x = centerX + radius * Math.cos(angle);
+                        const y = centerY + radius * Math.sin(angle);
+                        points.push({ x, y });
+                    }
+                    return [points];
+                }
+            },
+            {
+                name: "Grid",
+                description: "A geometric grid pattern",
+                generate: function() {
+                    let strokes = [];
+                    const spacing = 15;
+                    const start = 10;
+                    const end = 170;
+                    
+                    // Horizontal lines
+                    for (let y = start; y <= end; y += spacing) {
+                        let stroke = [];
+                        for (let x = start; x <= end; x += 5) {
+                            stroke.push({ x, y });
+                        }
+                        strokes.push(stroke);
+                    }
+                    
+                    // Vertical lines
+                    for (let x = start; x <= end; x += spacing) {
+                        let stroke = [];
+                        for (let y = start; y <= end; y += 5) {
+                            stroke.push({ x, y });
+                        }
+                        strokes.push(stroke);
+                    }
+                    return strokes;
+                }
+            },
+            {
+                name: "Circles",
+                description: "Concentric circles",
+                generate: function() {
+                    let strokes = [];
+                    const centerX = 90, centerY = 90;
+                    const radii = [20, 40, 60, 80];
+                    
+                    for (let radius of radii) {
+                        let stroke = [];
+                        for (let angle = 0; angle < Math.PI * 2; angle += 0.05) {
+                            const x = centerX + radius * Math.cos(angle);
+                            const y = centerY + radius * Math.sin(angle);
+                            stroke.push({ x, y });
+                        }
+                        strokes.push(stroke);
+                    }
+                    return strokes;
+                }
+            },
+            {
+                name: "Wave",
+                description: "Flowing wave pattern",
+                generate: function() {
+                    let strokes = [];
+                    const amplitude = 40;
+                    const frequency = 0.05;
+                    
+                    for (let startY = 20; startY < 160; startY += 15) {
+                        let stroke = [];
+                        for (let x = 10; x < 170; x += 2) {
+                            const y = startY + amplitude * Math.sin(x * frequency);
+                            stroke.push({ x, y });
+                        }
+                        strokes.push(stroke);
+                    }
+                    return strokes;
+                }
+            },
+            {
+                name: "Star",
+                description: "A geometric star shape",
+                generate: function() {
+                    let points = [];
+                    const centerX = 90, centerY = 90;
+                    const points_count = 5;
+                    const outerRadius = 70;
+                    const innerRadius = 30;
+                    
+                    for (let i = 0; i < points_count * 2; i++) {
+                        const angle = (i * Math.PI) / points_count - Math.PI / 2;
+                        const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                        const x = centerX + radius * Math.cos(angle);
+                        const y = centerY + radius * Math.sin(angle);
+                        points.push({ x, y });
+                    }
+                    points.push(points[0]); // Close the star
+                    return [points];
+                }
+            },
+            {
+                name: "Mandala",
+                description: "Decorative mandala pattern",
+                generate: function() {
+                    let strokes = [];
+                    const centerX = 90, centerY = 90;
+                    
+                    for (let layer = 1; layer <= 4; layer++) {
+                        const radius = layer * 20;
+                        const petals = layer * 3;
+                        
+                        for (let petal = 0; petal < petals; petal++) {
+                            let stroke = [];
+                            const baseAngle = (petal * Math.PI * 2) / petals;
+                            
+                            for (let angle = baseAngle; angle < baseAngle + Math.PI / petals; angle += 0.05) {
+                                const r = radius * Math.sin(angle - baseAngle) / Math.sin(Math.PI / petals);
+                                const x = centerX + r * Math.cos(angle);
+                                const y = centerY + r * Math.sin(angle);
+                                stroke.push({ x, y });
+                            }
+                            strokes.push(stroke);
+                        }
+                    }
+                    return strokes;
+                }
+            },
+            {
+                name: "Cross",
+                description: "Christian cross pattern with thickness",
+                generate: function() {
+                    let strokes = [];
+                    
+                    // Vertical bar dimensions
+                    const verticalLeft = 80;
+                    const verticalRight = 100;
+                    const verticalTop = 10;
+                    const verticalBottom = 170;
+                    
+                    // Horizontal bar dimensions
+                    const horizontalLeft = 40;
+                    const horizontalRight = 140;
+                    const horizontalTop = 50;
+                    const horizontalBottom = 70;
+                    
+                    // One continuous outline
+                    let outline = [];
+                    
+                    // Top of vertical bar
+                    for (let x = verticalLeft; x <= verticalRight; x += 2) {
+                        outline.push({ x, y: verticalTop });
+                    }
+                    
+                    // Right side of vertical bar to horizontal intersection
+                    for (let y = verticalTop; y <= horizontalTop; y += 2) {
+                        outline.push({ x: verticalRight, y });
+                    }
+                    
+                    // Right side of horizontal bar
+                    for (let x = verticalRight; x <= horizontalRight; x += 2) {
+                        outline.push({ x, y: horizontalTop });
+                    }
+                    
+                    // Right vertical of horizontal bar
+                    for (let y = horizontalTop; y <= horizontalBottom; y += 2) {
+                        outline.push({ x: horizontalRight, y });
+                    }
+                    
+                    // Bottom of horizontal bar
+                    for (let x = horizontalRight; x >= verticalRight; x -= 2) {
+                        outline.push({ x, y: horizontalBottom });
+                    }
+                    
+                    // Right side of vertical bar bottom
+                    for (let y = horizontalBottom; y <= verticalBottom; y += 2) {
+                        outline.push({ x: verticalRight, y });
+                    }
+                    
+                    // Bottom of vertical bar
+                    for (let x = verticalRight; x >= verticalLeft; x -= 2) {
+                        outline.push({ x, y: verticalBottom });
+                    }
+                    
+                    // Left side of vertical bar bottom
+                    for (let y = verticalBottom; y >= horizontalBottom; y -= 2) {
+                        outline.push({ x: verticalLeft, y });
+                    }
+                    
+                    // Bottom of horizontal bar left side
+                    for (let x = verticalLeft; x >= horizontalLeft; x -= 2) {
+                        outline.push({ x, y: horizontalBottom });
+                    }
+                    
+                    // Left side of horizontal bar
+                    for (let y = horizontalBottom; y >= horizontalTop; y -= 2) {
+                        outline.push({ x: horizontalLeft, y });
+                    }
+                    
+                    // Top of horizontal bar left side
+                    for (let x = horizontalLeft; x <= verticalLeft; x += 2) {
+                        outline.push({ x, y: horizontalTop });
+                    }
+                    
+                    // Left side of vertical bar top
+                    for (let y = horizontalTop; y >= verticalTop; y -= 2) {
+                        outline.push({ x: verticalLeft, y });
+                    }
+                    
+                    strokes.push(outline);
+                    return strokes;
+                }
+            }
+        ];
+
+        function drawPatternPreview(canvas, patternFunc) {
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const strokes = patternFunc();
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Scale to canvas size (180mm table to canvas)
+            const scale = canvas.width / 180;
+            
+            for (let stroke of strokes) {
+                if (stroke.length === 0) continue;
+                ctx.beginPath();
+                ctx.moveTo(stroke[0].x * scale, stroke[0].y * scale);
+                for (let i = 1; i < stroke.length; i++) {
+                    ctx.lineTo(stroke[i].x * scale, stroke[i].y * scale);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function generateGCode(strokes) {
+            let gcode = [];
+            gcode.push('G90'); // Absolute positioning
+            gcode.push('G21'); // Millimeters
+
+            for (let stroke of strokes) {
+                if (stroke.length === 0) continue;
+
+                // Move to first point
+                let x = stroke[0].x;
+                let y = stroke[0].y;
+                gcode.push(`G0 X${x.toFixed(2)} Y${y.toFixed(2)}`);
+
+                // Draw line segments
+                for (let i = 1; i < stroke.length; i++) {
+                    x = stroke[i].x;
+                    y = stroke[i].y;
+                    gcode.push(`G1 X${x.toFixed(2)} Y${y.toFixed(2)} F1000`);
+                }
+            }
+
+            gcode.push('G0 X0 Y0'); // Return to origin
+            gcode.push('M30'); // End of program
+
+            return gcode.join('\n');
+        }
+
+        function downloadPattern(name, patternFunc) {
+            const strokes = patternFunc();
+            const gcode = generateGCode(strokes);
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(gcode));
+            element.setAttribute('download', `${name.toLowerCase()}.gcode`);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+
+        // Populate pattern grid
+        const patternGrid = document.getElementById('patternGrid');
+        patterns.forEach(pattern => {
+            const card = document.createElement('div');
+            card.className = 'pattern-card';
+            
+            const canvas = document.createElement('canvas');
+            canvas.className = 'pattern-preview';
+            canvas.width = 150;
+            canvas.height = 150;
+            drawPatternPreview(canvas, pattern.generate);
+            
+            const name = document.createElement('div');
+            name.className = 'pattern-name';
+            name.textContent = pattern.name;
+            
+            const desc = document.createElement('div');
+            desc.className = 'pattern-description';
+            desc.textContent = pattern.description;
+            
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = 'pattern-download';
+            downloadBtn.textContent = 'Download G-Code';
+            downloadBtn.onclick = () => downloadPattern(pattern.name, pattern.generate);
+            
+            card.appendChild(canvas);
+            card.appendChild(name);
+            card.appendChild(desc);
+            card.appendChild(downloadBtn);
+            patternGrid.appendChild(card);
+        });
+
+        // Back button
+        document.getElementById('backBtn').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>

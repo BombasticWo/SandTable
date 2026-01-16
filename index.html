@@ -14,29 +14,60 @@
 
         .button-container {
             display: flex;
-            gap: 10px;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         button {
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 0;
+            font-size: 18px;
             cursor: pointer;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             background-color: #3498db;
             color: white;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
         }
 
         button:hover {
             background-color: #2980b9;
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .button-icon {
+            font-size: 60px;
+        }
+
+        .button-text {
+            font-weight: bold;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="button-container">
-        <button>Button 1</button>
-        <button>Button 2</button>
-        <button>Button 3</button>
+        <button onclick="window.location.href='draw.html'">
+            <div class="button-icon">✏️</div>
+            <div class="button-text">Draw & Convert</div>
+        </button>
+        <button onclick="window.location.href='patterns.html'">
+            <div class="button-icon">🔷</div>
+            <div class="button-text">Patterns</div>
+        </button>
+        <button onclick="window.location.href='upload.html'">
+            <div class="button-icon">🖼️</div>
+            <div class="button-text">Upload Image</div>
+        </button>
     </div>
 </body>
 </html>
