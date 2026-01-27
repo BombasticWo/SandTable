@@ -1,545 +1,252 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Draw & Convert to G-Code</title>
+    <meta charset="UTF-8">
+    <title>Sand Table Drawer (Marble Safe)</title>
+
     <style>
         body {
             font-family: sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
+            background: #f0f0f0;
             padding: 20px;
-            background-color: #f0f0f0;
-        }
-
-        h1 {
-            margin-bottom: 20px;
         }
 
         canvas {
             border: 2px solid #333;
             background: white;
             cursor: crosshair;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
-        .controls {
+        .controls, .text-controls {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .text-controls {
-            border: 2px solid #9b59b6;
-            border-radius: 5px;
-            padding: 10px;
-            background-color: #f5e6ff;
-            display: flex;
-            gap: 10px;
-            align-items: center;
             flex-wrap: wrap;
-        }
-
-        .text-controls label {
-            font-weight: bold;
-            color: #9b59b6;
+            margin-bottom: 10px;
         }
 
         button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
+            padding: 8px 14px;
             border: none;
-            border-radius: 5px;
-            background-color: #3498db;
+            border-radius: 4px;
+            cursor: pointer;
             color: white;
         }
 
-        button:hover {
-            background-color: #2980b9;
-        }
+        #downloadBtn { background: #27ae60; }
+        #clearBtn { background: #e74c3c; }
+        #backBtn { background: #7f8c8d; }
+        #addTextBtn { background: #9b59b6; }
+        #deleteTextBtn { background: #c0392b; }
 
-        #clearBtn {
-            background-color: #e74c3c;
-        }
-
-        #clearBtn:hover {
-            background-color: #c0392b;
-        }
-
-        #downloadBtn {
-            background-color: #27ae60;
-        }
-
-        #downloadBtn:hover {
-            background-color: #229954;
-        }
-
-        #backBtn {
-            background-color: #95a5a6;
-        }
-
-        #backBtn:hover {
-            background-color: #7f8c8d;
-        }
-
-        #gcodePreview {
-            width: 400px;
+        textarea {
+            width: 420px;
             height: 200px;
             font-family: monospace;
-            font-size: 12px;
-            background: #1a252f;
-            color: #1abc9c;
-            border: 1px solid #34495e;
-            padding: 10px;
-            border-radius: 5px;
-            overflow: auto;
-        }
-
-        #textInput {
-            padding: 8px 12px;
-            font-size: 14px;
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-            min-width: 150px;
-        }
-
-        #fontSizeInput {
-            padding: 8px 12px;
-            font-size: 14px;
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-            width: 80px;
-        }
-
-        #fontSelect {
-            padding: 8px 12px;
-            font-size: 14px;
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-        }
-
-        #addTextBtn {
-            background-color: #9b59b6;
-        }
-
-        #addTextBtn:hover {
-            background-color: #8e44ad;
-        }
-
-        #deleteTextBtn {
-            background-color: #e74c3c;
-        }
-
-        #deleteTextBtn:hover {
-            background-color: #c0392b;
         }
     </style>
 </head>
+
 <body>
-    <h1>Draw & Convert to G-Code</h1>
-    <p style="color: #667; margin: 0 0 20px 0;">Sand Table: 180mm × 180mm</p>
-    
-    <div class="controls">
-        <button id="downloadBtn">Download G-Code</button>
-        <input type="text" id="filenameInput" placeholder="filename" value="drawing">
-        <span>.gcode</span>
-        <button id="clearBtn">Clear Canvas</button>
-        <button id="backBtn">Back to Menu</button>
-    </div>
 
-    <div class="text-controls">
-        <label>Text Tools:</label>
-        <input type="text" id="textInput" placeholder="Enter text to add">
-        <select id="fontSelect">
-            <option value="Arial" style="font-family: Arial;">Arial</option>
-            <option value="Times New Roman" style="font-family: 'Times New Roman';">Times New Roman</option>
-            <option value="Courier New" style="font-family: 'Courier New';">Courier New</option>
-            <option value="Georgia" style="font-family: Georgia;">Georgia</option>
-            <option value="Verdana" style="font-family: Verdana;">Verdana</option>
-        </select>
-        <input type="number" id="fontSizeInput" placeholder="Font size" value="16" min="8" max="72">
-        <button id="addTextBtn">Add Text</button>
-        <button id="deleteTextBtn">Delete Text</button>
-    </div>
+<h2>Sand Table Draw → G-Code</h2>
+<p>Marble Sand Table - 180mm x 180mm</p>
 
-    <canvas id="drawingCanvas" width="500" height="500"></canvas>
+<div class="controls">
+    <button id="downloadBtn">Download G-Code</button>
+    <input id="filenameInput" value="drawing">
+    <span>.gcode</span>
+    <button id="clearBtn">Clear</button>
+    <button id="backBtn">Back to Menu</button>
+</div>
 
-    <h3>G-Code Preview:</h3>
-    <textarea id="gcodePreview" readonly></textarea>
+<div class="text-controls">
+    <input id="textInput" placeholder="Text">
+    <select id="fontSelect">
+        <option>Arial</option>
+        <option>Times New Roman</option>
+        <option>Courier New</option>
+        <option>Georgia</option>
+        <option>Verdana</option>
+    </select>
+    <input id="fontSizeInput" type="number" value="16" min="8">
+    <button id="addTextBtn">Add Text</button>
+    <button id="deleteTextBtn">Delete Text</button>
+</div>
 
-    <script>
-        const canvas = document.getElementById('drawingCanvas');
-        const ctx = canvas.getContext('2d');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const backBtn = document.getElementById('backBtn');
-        const addTextBtn = document.getElementById('addTextBtn');
-        const deleteTextBtn = document.getElementById('deleteTextBtn');
-        const textInput = document.getElementById('textInput');
-        const fontSelect = document.getElementById('fontSelect');
-        const fontSizeInput = document.getElementById('fontSizeInput');
-        const gcodePreview = document.getElementById('gcodePreview');
+<canvas id="drawingCanvas" width="500" height="500"></canvas>
 
-        let isDrawing = false;
-        let strokes = [];
-        let currentStroke = [];
-        let textElements = [];
-        let isAddingText = false;
-        let selectedTextIndex = -1;
-        let draggingHandle = null;
-        let draggingText = false;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let dragStartTextX = 0;
-        let dragStartTextY = 0;
+<h3>G-Code Preview</h3>
+<textarea id="gcodePreview" readonly></textarea>
 
-        // Initialize drawing
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+<script>
+const canvas = document.getElementById('drawingCanvas');
+const ctx = canvas.getContext('2d');
 
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mouseleave', stopDrawing);
+const SMOOTHING_WINDOW = 5;
+const MIN_DISTANCE = 2;
 
-        function startDrawing(event) {
-            if (isAddingText) return; // Don't draw when adding text
-            if (draggingText) return; // Don't draw when dragging text
-            
-            // Check if trying to drag resize handle
-            if (selectedTextIndex >= 0) {
-                const rect = canvas.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-                
-                const textElem = textElements[selectedTextIndex];
-                ctx.font = `bold ${textElem.fontSize}px Arial`;
-                const metrics = ctx.measureText(textElem.text);
-                const textWidth = metrics.width;
-                const textHeight = textElem.fontSize;
-                
-                const handleSize = 8;
-                const bottom = textElem.y + textHeight;
-                const right = textElem.x + textWidth;
-                
-                // If clicking on resize handle or text, don't draw
-                if ((x >= right - handleSize && x <= right + handleSize &&
-                    y >= bottom - handleSize && y <= bottom + handleSize) ||
-                    (x >= textElem.x && x <= textElem.x + textWidth &&
-                     y >= textElem.y && y <= textElem.y + textHeight)) {
-                    return;
-                }
-            }
-            
-            isDrawing = true;
-            currentStroke = [];
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            currentStroke.push({ x, y });
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        }
+let strokes = [];
+let currentStroke = [];
+let textElements = [];
+let isDrawing = false;
+let isAddingText = false;
 
-        function draw(event) {
-            if (!isDrawing || draggingHandle) return;
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            currentStroke.push({ x, y });
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        }
+ctx.lineWidth = 2;
+ctx.lineCap = 'round';
 
-        function stopDrawing() {
-            if (isDrawing && currentStroke.length > 0) {
-                strokes.push(currentStroke);
-                isDrawing = false;
-                updateGcodePreview();
+/* ---------- MOUSE ---------- */
+
+canvas.addEventListener('mousedown', e => {
+    if (isAddingText) return;
+    isDrawing = true;
+    currentStroke = [getMouse(e)];
+    ctx.beginPath();
+    ctx.moveTo(currentStroke[0].x, currentStroke[0].y);
+});
+
+canvas.addEventListener('mousemove', e => {
+    if (!isDrawing) return;
+    const p = getMouse(e);
+    currentStroke.push(p);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+});
+
+canvas.addEventListener('mouseup', finishStroke);
+canvas.addEventListener('mouseleave', finishStroke);
+
+canvas.addEventListener('click', e => {
+    if (!isAddingText) return;
+    const p = getMouse(e);
+    textElements.push({
+        text: textInput.value,
+        x: p.x,
+        y: p.y,
+        font: fontSelect.value,
+        fontSize: parseInt(fontSizeInput.value)
+    });
+    isAddingText = false;
+    redraw();
+    updatePreview();
+});
+
+/* ---------- HELPERS ---------- */
+
+function getMouse(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function finishStroke() {
+    if (isDrawing && currentStroke.length > 1) {
+        strokes.push(smoothStroke(currentStroke));
+    }
+    isDrawing = false;
+    updatePreview();
+}
+
+function smoothStroke(points) {
+    const filtered = [points[0]];
+    for (let i = 1; i < points.length; i++) {
+        const dx = points[i].x - filtered.at(-1).x;
+        const dy = points[i].y - filtered.at(-1).y;
+        if (Math.hypot(dx, dy) >= MIN_DISTANCE) filtered.push(points[i]);
+    }
+
+    return filtered.map((_, i, arr) => {
+        let sx = 0, sy = 0, c = 0;
+        for (let j = -SMOOTHING_WINDOW; j <= SMOOTHING_WINDOW; j++) {
+            const k = i + j;
+            if (k >= 0 && k < arr.length) {
+                sx += arr[k].x;
+                sy += arr[k].y;
+                c++;
             }
         }
+        return { x: sx / c, y: sy / c };
+    });
+}
 
-        function redrawCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Redraw strokes
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            for (let stroke of strokes) {
-                if (stroke.length === 0) continue;
-                ctx.beginPath();
-                ctx.moveTo(stroke[0].x, stroke[0].y);
-                for (let i = 1; i < stroke.length; i++) {
-                    ctx.lineTo(stroke[i].x, stroke[i].y);
-                }
-                ctx.stroke();
-            }
-            
-            // Redraw text
-            ctx.fillStyle = '#000000';
-            ctx.textBaseline = 'top';
-            for (let i = 0; i < textElements.length; i++) {
-                const textElem = textElements[i];
-                ctx.font = `bold ${textElem.fontSize}px ${textElem.font}`;
-                ctx.fillText(textElem.text, textElem.x, textElem.y);
-                
-                // Draw selection box if selected
-                if (i === selectedTextIndex) {
-                    const metrics = ctx.measureText(textElem.text);
-                    const textWidth = metrics.width;
-                    const textHeight = textElem.fontSize;
-                    ctx.strokeStyle = '#3498db';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(textElem.x - 2, textElem.y - 2, textWidth + 4, textHeight + 4);
-                    
-                    // Draw resize handle
-                    const handleSize = 8;
-                    ctx.fillStyle = '#3498db';
-                    ctx.fillRect(textElem.x + textWidth - 2 - handleSize/2, 
-                                 textElem.y + textHeight - 2 - handleSize/2, 
-                                 handleSize, handleSize);
-                }
-            }
+/* ---------- DRAW ---------- */
+
+function redraw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    strokes.forEach(s => {
+        ctx.beginPath();
+        ctx.moveTo(s[0].x, s[0].y);
+        s.forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+    });
+
+    textElements.forEach(t => {
+        ctx.font = `bold ${t.fontSize}px ${t.font}`;
+        ctx.fillText(t.text, t.x, t.y);
+    });
+}
+
+/* ---------- G-CODE ---------- */
+
+function convertToGCode() {
+    const scale = 180 / 500;
+    const g = [
+        'G90', // absolute
+        'G21'  // mm
+    ];
+
+    strokes.forEach(s => {
+        let x = s[0].x * scale;
+        let y = (500 - s[0].y) * scale;
+        g.push(`G0 X${x.toFixed(2)} Y${y.toFixed(2)}`);
+        for (let i = 1; i < s.length; i++) {
+            x = s[i].x * scale;
+            y = (500 - s[i].y) * scale;
+            g.push(`G1 X${x.toFixed(2)} Y${y.toFixed(2)} F1000`);
         }
+    });
 
-        clearBtn.addEventListener('click', () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            strokes = [];
-            currentStroke = [];
-            textElements = [];
-            gcodePreview.value = '';
-        });
+    return g.join('\n');
+}
 
-        backBtn.addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
+function updatePreview() {
+    gcodePreview.value = convertToGCode();
+}
 
-        addTextBtn.addEventListener('click', () => {
-            if (textInput.value.trim() === '') {
-                alert('Please enter text first!');
-                return;
-            }
-            isAddingText = true;
-            canvas.style.cursor = 'crosshair';
-            canvas.title = 'Click to place text';
-        });
+/* ---------- UI ---------- */
 
-        deleteTextBtn.addEventListener('click', () => {
-            if (selectedTextIndex >= 0) {
-                textElements.splice(selectedTextIndex, 1);
-                selectedTextIndex = -1;
-                redrawCanvas();
-                updateGcodePreview();
-            } else {
-                alert('Please select text to delete!');
-            }
-        });
+addTextBtn.onclick = () => isAddingText = true;
 
-        canvas.addEventListener('click', (event) => {
-            if (isAddingText) {
-                const rect = canvas.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-                textElements.push({
-                    text: textInput.value,
-                    x: x,
-                    y: y,
-                    fontSize: parseInt(fontSizeInput.value),
-                    font: fontSelect.value
-                });
-                redrawCanvas();
-                textInput.value = '';
-                isAddingText = false;
-                canvas.style.cursor = 'crosshair';
-                canvas.title = '';
-                updateGcodePreview();
-            } else {
-                // Check if clicking on existing text
-                const rect = canvas.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-                
-                selectedTextIndex = -1;
-                for (let i = 0; i < textElements.length; i++) {
-                    const textElem = textElements[i];
-                    ctx.font = `bold ${textElem.fontSize}px ${textElem.font}`;
-                    const metrics = ctx.measureText(textElem.text);
-                    const textWidth = metrics.width;
-                    const textHeight = textElem.fontSize;
-                    
-                    if (x >= textElem.x && x <= textElem.x + textWidth &&
-                        y >= textElem.y && y <= textElem.y + textHeight) {
-                        selectedTextIndex = i;
-                        fontSizeInput.value = textElem.fontSize;
-                        fontSelect.value = textElem.font;
-                        break;
-                    }
-                }
-                redrawCanvas();
-            }
-        });
+deleteTextBtn.onclick = () => {
+    textElements = [];
+    redraw();
+    updatePreview();
+};
 
-        canvas.addEventListener('mousedown', (event) => {
-            if (selectedTextIndex >= 0) {
-                const rect = canvas.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-                
-                const textElem = textElements[selectedTextIndex];
-                ctx.font = `bold ${textElem.fontSize}px ${textElem.font}`;
-                const metrics = ctx.measureText(textElem.text);
-                const textWidth = metrics.width;
-                const textHeight = textElem.fontSize;
-                
-                const handleSize = 8;
-                const bottom = textElem.y + textHeight;
-                const right = textElem.x + textWidth;
-                
-                // Check if clicking on resize handle
-                if (x >= right - handleSize && x <= right + handleSize &&
-                    y >= bottom - handleSize && y <= bottom + handleSize) {
-                    draggingHandle = 'bottom-right';
-                    dragStartY = y;
-                } 
-                // Check if clicking on text to drag it
-                else if (x >= textElem.x && x <= textElem.x + textWidth &&
-                         y >= textElem.y && y <= textElem.y + textHeight) {
-                    draggingText = true;
-                    dragStartX = x;
-                    dragStartY = y;
-                    dragStartTextX = textElem.x;
-                    dragStartTextY = textElem.y;
-                }
-            }
-        });
+clearBtn.onclick = () => {
+    strokes = [];
+    textElements = [];
+    redraw();
+    updatePreview();
+};
 
-        canvas.addEventListener('mousemove', (event) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            
-            if (draggingText && selectedTextIndex >= 0) {
-                const xDelta = x - dragStartX;
-                const yDelta = y - dragStartY;
-                textElements[selectedTextIndex].x = dragStartTextX + xDelta;
-                textElements[selectedTextIndex].y = dragStartTextY + yDelta;
-                redrawCanvas();
-                updateGcodePreview();
-            } else if (selectedTextIndex >= 0) {
-                const textElem = textElements[selectedTextIndex];
-                ctx.font = `bold ${textElem.fontSize}px ${textElem.font}`;
-                const metrics = ctx.measureText(textElem.text);
-                const textWidth = metrics.width;
-                const textHeight = textElem.fontSize;
-                
-                const handleSize = 8;
-                const bottom = textElem.y + textHeight;
-                const right = textElem.x + textWidth;
-                
-                // Check if hovering over resize handle
-                if (x >= right - handleSize && x <= right + handleSize &&
-                    y >= bottom - handleSize && y <= bottom + handleSize) {
-                    canvas.style.cursor = 'se-resize';
-                } else if (x >= textElem.x && x <= textElem.x + textWidth &&
-                           y >= textElem.y && y <= textElem.y + textHeight) {
-                    canvas.style.cursor = 'move';
-                } else {
-                    canvas.style.cursor = 'default';
-                }
-            }
-            
-            if (draggingHandle === 'bottom-right') {
-                const yDelta = y - dragStartY;
-                const newSize = Math.max(8, textElements[selectedTextIndex].fontSize + yDelta);
-                textElements[selectedTextIndex].fontSize = newSize;
-                dragStartY = y;
-                redrawCanvas();
-                updateGcodePreview();
-            }
-        });
+downloadBtn.onclick = () => {
+    if (!strokes.length) return alert('Nothing to export');
+    const a = document.createElement('a');
+    a.href = 'data:text/plain,' + encodeURIComponent(convertToGCode());
+    a.download = (filenameInput.value || 'drawing') + '.gcode';
+    a.click();
+};
 
-        canvas.addEventListener('mouseup', () => {
-            draggingHandle = null;
-            draggingText = false;
-        });
+/* ---------- BACK BUTTON ---------- */
+/* Change 'index.html' if your main menu file has a different name */
+backBtn.onclick = () => {
+    window.location.href = 'index.html';
+};
+</script>
 
-        canvas.addEventListener('mouseleave', () => {
-            draggingHandle = null;
-            draggingText = false;
-        });
-
-        downloadBtn.addEventListener('click', downloadGCode);
-
-        function convertToGCode() {
-            let gcode = [];
-            gcode.push('G90'); // Absolute positioning
-            gcode.push('G21'); // Millimeters
-
-            // 180x180mm sand table
-            // Canvas is 500x500 pixels, scale to fit 180x180mm
-            const tableSize = 180; // mm
-            const canvasSize = 500; // pixels
-            const scale = tableSize / canvasSize; // 0.36 mm per pixel
-            const offsetX = 0;
-            const offsetY = 0;
-
-            // Add drawing strokes
-            for (let stroke of strokes) {
-                if (stroke.length === 0) continue;
-
-                // Move to first point
-                let x = stroke[0].x * scale + offsetX;
-                let y = stroke[0].y * scale + offsetY;
-                gcode.push(`G0 X${x.toFixed(2)} Y${y.toFixed(2)}`);
-
-                // Draw line segments
-                for (let i = 1; i < stroke.length; i++) {
-                    x = stroke[i].x * scale + offsetX;
-                    y = stroke[i].y * scale + offsetY;
-                    gcode.push(`G1 X${x.toFixed(2)} Y${y.toFixed(2)} F1000`);
-                }
-            }
-
-            // Add text elements as comments in G-code
-            for (let textElem of textElements) {
-                const x = textElem.x * scale + offsetX;
-                const y = textElem.y * scale + offsetY;
-                gcode.push(`; Text: "${textElem.text}" at X${x.toFixed(2)} Y${y.toFixed(2)} (${textElem.font}, ${textElem.fontSize}px)`);
-            }
-
-            gcode.push('G0 X0 Y0'); // Return to origin
-            gcode.push('M30'); // End of program
-
-            return gcode.join('\n');
-        }
-
-        function updateGcodePreview() {
-            const gcode = convertToGCode();
-            gcodePreview.value = gcode;
-        }
-
-        function downloadGCode() {
-            if (strokes.length === 0) {
-                alert('Please draw something first!');
-                return;
-            }
-
-            const gcode = convertToGCode();
-            const filename = document.getElementById('filenameInput').value.trim() || 'drawing';
-            const element = document.createElement('a');
-            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(gcode));
-            element.setAttribute('download', filename + '.gcode');
-            element.style.display = 'none';
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
-        }
-    </script>
 </body>
 </html>
